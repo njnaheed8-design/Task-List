@@ -76,8 +76,9 @@ def icon(size):
     d.ellipse([s*0.15,s*0.15,s*0.85,s*0.85],outline='white',width=int(s*0.08))
     d.line([s/2,s/2,s/2,s*0.3],fill='white',width=int(s*0.06));d.line([s/2,s/2,s*0.68,s/2],fill='white',width=int(s*0.06))
     buf=BytesIO();img.save(buf,'PNG');buf.seek(0);return Response(buf.getvalue(),mimetype='image/png')
-@app.route('/sw.js')@app.route('/logo.png')
-def logo():
-    return send_file('logo.png', mimetype='image/png')
+@app.route('/sw.js')
 def sw(): return Response("self.addEventListener('install',e=>{self.skipWaiting()});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))})",mimetype='application/javascript')
 if __name__=='__main__': app.run(host='0.0.0.0',port=int(os.environ.get('PORT',5000)))
+@app.route('/logo.png')
+def logo():
+    return send_file('logo.png', mimetype='image/png')
