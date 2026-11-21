@@ -7,7 +7,7 @@ app = Flask(__name__)
 HTML = """<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Alarm Task List</title><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#2563eb">
 <style>
-body{font-family:sans-serif;background:#111827;color:white;padding:18px;max-width:500px;margin:auto;transition:.3s}
+body{font-family:sans-serif;background:#111827;color:white;padding:18px;max-width:500px;margin:auto}
 body.light{background:#f3f4f6;color:#111}
 .card{background:#1f2937;padding:16px;border-radius:16px} body.light .card{background:white;box-shadow:0 4px 12px #0002}
 input,select{padding:13px;margin:7px 0;width:100%;border-radius:12px;border:none;box-sizing:border-box;font-size:15px}
@@ -16,20 +16,24 @@ button{padding:12px 16px;border:none;border-radius:10px;font-weight:bold;cursor:
 .top{display:flex;justify-content:space-between;align-items:center}
 .toggle{background:white;color:#111;border-radius:20px;padding:8px 12px;font-size:13px}
 .badge{background:#16a34a;color:white;padding:5px 10px;border-radius:20px;font-size:13px;display:inline-block}
-.task{background:#374151;padding:12px;margin:8px 0;border-radius:10px;display:flex;justify-content:space-between;align-items:center} body.light .task{background:#e5e7eb}
-.row{display:flex;gap:8px}.row select{flex:1}
+.task{background:#374151;padding:13px;margin:9px 0;border-radius:12px} body.light .task{background:#e5e7eb}
+.task b{font-size:16px}.at{color:#60a5fa;font-weight:bold;font-size:14px;margin-top:4px}
+.row{display:flex;gap:8px}.row select{flex:1}.row button{flex:1}
+label{font-size:13px;opacity:.7}
 </style></head><body>
 <div class="top"><h2>⏰ My<br>Alarm Task List</h2><button class="toggle" onclick="document.body.classList.toggle('light')">🌙 Dark / ☀️ Light</button></div>
 <span class="badge">✅ Offline Ready</span><p style="opacity:.6;font-size:13px">Data charao cholbe!</p>
 <div class="card">
-<input id="t" placeholder="Notun kaj likho...">
+<input id="t" placeholder="Notun kaj likho... jemon: bazar kora">
 <select id="p"><option>🔴 High</option><option>🟡 Medium</option><option>🟢 Low</option></select>
-<div class="row"><button class="blue" style="flex:1" onclick="add()">Add Task</button><button class="gray" style="flex:1" onclick="clearAll()">🗑️ Sob Delete</button></div>
-<div id="list"></div><hr>
-<h3>⏰ Alarm + AM/PM</h3>
+<label>🕐 Task er Time Set Koro:</label>
 <div class="row"><select id="hh"></select><select id="mm"></select><select id="ap"><option>AM</option><option>PM</option></select></div>
 <select id="snd"><option value="beep">Beep Beep</option><option value="alarm">Alarm Clock</option><option value="ring">Ring Ring</option></select>
-<div class="row"><button class="blue" style="flex:1" onclick="setAlarm()">Set Alarm</button><button class="red" style="flex:1" onclick="stopAlarm()">Stop 🔇</button></div>
+<div class="row"><button class="blue" onclick="add()">Add Task</button><button class="gray" onclick="clearAll()">🗑️ Sob Delete</button></div>
+<div id="list"></div><hr>
+<h3>⏰ Alarm + AM/PM</h3>
+<p style="font-size:13px;opacity:.7">Task add korlei alarm set hoye jabe!</p>
+<div class="row"><button class="red" onclick="stopAlarm()">Stop 🔇</button></div>
 <p id="astatus" style="font-size:13px;opacity:.7"></p>
 </div><audio id="a" loop src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"></audio>
 <script>
@@ -37,14 +41,23 @@ let tasks=JSON.parse(localStorage.getItem('tasks')||'[]');
 let hh=document.getElementById('hh'),mm=document.getElementById('mm');
 for(let i=1;i<=12;i++)hh.innerHTML+=`<option>${String(i).padStart(2,'0')}</option>`;
 for(let i=0;i<60;i++)mm.innerHTML+=`<option>${String(i).padStart(2,'0')}</option>`;
-function render(){let h='';tasks.forEach((x,i)=>{h+=`<div class="task"><span>${x.p} - ${x.t}</span><span onclick="del(${i})" style="color:#f87171;font-weight:bold;cursor:pointer;font-size:20px">❌</span></div>`});document.getElementById('list').innerHTML=h}
-function add(){let v=document.getElementById('t').value;if(!v)return;tasks.push({t:v,p:document.getElementById('p').value});localStorage.setItem('tasks',JSON.stringify(tasks));document.getElementById('t').value='';render()}
+hh.value='05'; mm.value='00'; document.getElementById('ap').value='PM';
+function render(){
+ let h='';tasks.forEach((x,i)=>{
+  h+=`<div class="task"><b>Task ${i+1} - ${x.t}</b><div class="at">🕐 at ${x.show}</div><div style="display:flex;justify-content:space-between;margin-top:8px"><span style="font-size:13px;opacity:.7">${x.p}</span><span onclick="del(${i})" style="color:#f87171;font-weight:bold;cursor:pointer">❌</span></div></div>`});
+ document.getElementById('list').innerHTML=h||'<p style="opacity:.6">Kono kaj nai</p>'}
+function add(){
+ let v=document.getElementById('t').value;if(!v)return alert('Kaj likho!');
+ let h=hh.value,m=mm.value,ap=document.getElementById('ap').value;
+ let h24=parseInt(h)%12+(ap==='PM'?12:0);
+ let t24=String(h24).padStart(2,'0')+':'+m;
+ tasks.push({t:v,p:document.getElementById('p').value,show:h+':'+m+' '+ap,t24:t24,rang:false});
+ localStorage.setItem('tasks',JSON.stringify(tasks));document.getElementById('t').value='';render();
+ document.getElementById('astatus').innerText='Alarm set: '+v+' at '+h+':'+m+' '+ap;}
 function del(i){tasks.splice(i,1);localStorage.setItem('tasks',JSON.stringify(tasks));render()}
-function clearAll(){tasks=[];localStorage.setItem('tasks','[]');render()}
-let alarmTime=null;
-function setAlarm(){let h=hh.value,m=mm.value,ap=document.getElementById('ap').value;let h24=parseInt(h)%12+(ap==='PM'?12:0);alarmTime=String(h24).padStart(2,'0')+':'+m;document.getElementById('astatus').innerText='Alarm set: '+h+':'+m+' '+ap;alert('Alarm set! '+h+':'+m+' '+ap)}
-function stopAlarm(){alarmTime=null;document.getElementById('a').pause();document.getElementById('astatus').innerText='Alarm off';}
-setInterval(()=>{if(!alarmTime)return;let now=new Date().toTimeString().slice(0,5);if(now===alarmTime){document.getElementById('a').play();alert('⏰ ALARM! Time hoise!')}} ,5000);
+function clearAll(){if(confirm('Sob delete?')){tasks=[];localStorage.setItem('tasks','[]');render()}}
+function stopAlarm(){document.getElementById('a').pause();document.getElementById('astatus').innerText='Alarm off';}
+setInterval(()=>{let now=new Date().toTimeString().slice(0,5);tasks.forEach(x=>{if(x.t24===now&&!x.rang){x.rang=true;localStorage.setItem('tasks',JSON.stringify(tasks));document.getElementById('a').play();alert('⏰ ALARM!\\nTask: '+x.t+'\\nTime: '+x.show)}})},5000);
 render();if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}
 </script></body></html>"""
 
