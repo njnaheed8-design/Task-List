@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, Response, jsonify
 
 app = Flask(__name__)
 
@@ -9,7 +9,9 @@ HTML = """
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alarm Task List</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏰</text></svg>">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="data:image/svg+xml,[STRIPPED]">
+<meta name="theme-color" content="#007bff">
 <style>
 body{font-family:Arial;padding:20px}
 body.light{background:#f2f2f2;color:#000}
@@ -26,12 +28,15 @@ li{background:#eee;padding:12px;margin:8px 0;border-radius:10px;list-style:none;
 body.dark li{background:#333}
 .mode{float:right;padding:8px 12px;background:#333;color:white;border-radius:20px}
 body.dark .mode{background:#fff;color:#000}
+.offline{font-size:12px;padding:5px 10px;border-radius:20px;background:#28a745;color:white}
 </style>
 </head>
 <body class="light" id="body">
 <div class="box">
 <button class="mode" onclick="toggleMode()">🌙 Dark / ☀️ Light</button>
 <h2>⏰ My Alarm Task List</h2>
+<span class="offline">✅ Offline Ready</span>
+<p style="font-size:12px;color:gray">Data charao cholbe!</p>
 <input id="taskInput" placeholder="Notun kaj likho...">
 <select id="priority"><option>🔴 High</option><option>🟡 Medium</option><option>🟢 Low</option></select>
 <button onclick="addTask()">Add Task</button>
@@ -49,9 +54,9 @@ body.dark .mode{background:#fff;color:#000}
 <button class="stop" onclick="stopAlarm()">Stop 🔇</button>
 <button class="snooze" onclick="snooze()">Snooze 5 min 😴</button>
 <p id="msg" style="font-weight:bold"></p>
-<p style="font-size:12px;color:gray">⚠️ Alarm bajte hole app ta khola rakhte hobe, kete diba na, sudhu minimize korba.</p>
 </div>
 <script>
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('/sw.js'); }
 let tasks = JSON.parse(localStorage.getItem('myTasks')||'[]');
 let alarm = localStorage.getItem('myAlarm')||null;
 let audioCtx=null;
@@ -91,9 +96,23 @@ render();
 </body>
 </html>
 """
+
 @app.route('/')
 def home():
     return render_template_string(HTML)
+
+@app.route('/manifest.json')
+def manifest():
+    return jsonify({"name":"Alarm Task List","short_name":"Alarm","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#007bff","icons":[{"src":"data:image/svg+xml,[STRIPPED]","sizes":"512x512","type":"image/svg+xml"}]})
+
+@app.route('/sw.js')
+def sw():
+    js = """
+self.addEventListener('install', e => { e.waitUntil(caches.open('alarm-v1').then(c => c.addAll(['/','/manifest.json']))); self.skipWaiting(); });
+self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res => { let copy=res.clone(); caches.open('alarm-v1').then(c=>c.put(e.request, copy)); return res; }).catch(()=>caches.match('/')))); });
+"""
+    return Response(js, mimetype='application/javascript')
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
