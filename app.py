@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, Response, send_file
 import os
 from io import BytesIO
 from PIL import Image, ImageDraw
@@ -21,7 +21,8 @@ button{padding:12px 16px;border:none;border-radius:10px;font-weight:bold;cursor:
 .row{display:flex;gap:8px}.row select{flex:1}.row button{flex:1}
 label{font-size:13px;opacity:.7}.box{background:#111827;padding:12px;border-radius:12px;margin-top:10px} body.light .box{background:#f3f4f6}
 </style></head><body>
-<div class="top"><h2>⏰ My<br>Alarm Task List</h2><button class="toggle" onclick="document.body.classList.toggle('light')">🌙 Dark / ☀️ Light</button></div>
+<div class="top"><img src="/logo.png" style="width:80px;height:80px;border-radius:15px;">
+<h2>⏰ My<br>Alarm Task List</h2><button class="toggle" onclick="document.body.classList.toggle('light')">🌙 Dark / ☀️ Light</button></div>
 <span class="badge">✅ Offline Ready</span><p style="opacity:.6;font-size:13px">Data charao cholbe!</p>
 <div class="card">
 <input id="t" placeholder="Notun kaj likho... jemon: bazar kora">
@@ -75,6 +76,8 @@ def icon(size):
     d.ellipse([s*0.15,s*0.15,s*0.85,s*0.85],outline='white',width=int(s*0.08))
     d.line([s/2,s/2,s/2,s*0.3],fill='white',width=int(s*0.06));d.line([s/2,s/2,s*0.68,s/2],fill='white',width=int(s*0.06))
     buf=BytesIO();img.save(buf,'PNG');buf.seek(0);return Response(buf.getvalue(),mimetype='image/png')
-@app.route('/sw.js')
+@app.route('/sw.js')@app.route('/logo.png')
+def logo():
+    return send_file('logo.png', mimetype='image/png')
 def sw(): return Response("self.addEventListener('install',e=>{self.skipWaiting()});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))})",mimetype='application/javascript')
 if __name__=='__main__': app.run(host='0.0.0.0',port=int(os.environ.get('PORT',5000)))
